@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '../../auth/[...nextauth]/route'
+import { sendResultUpdatedEmail } from '@/lib/email'
 
 export async function PUT(
   req: Request,
@@ -20,6 +21,22 @@ export async function PUT(
     const body = await req.json()
     const { testName, testDate, values, referenceRange, assetId } = body
 
+    // Get the existing result to find the patient
+    const existingResult = await prisma.result.findUnique({
+      where: { id: params.id },
+      select: {
+        patientId: true,
+      },
+    })
+
+    if (!existingResult) {
+      return NextResponse.json(
+        { error: 'Result not found' },
+        { status: 404 }
+      )
+    }
+
+    // Update the result
     const result = await prisma.result.update({
       where: { id: params.id },
       data: {
@@ -43,6 +60,30 @@ export async function PUT(
         },
       },
     })
+
+    // Get patient information
+    const patient = await prisma.user.findUnique({
+      where: { patientId: existingResult.patientId },
+      select: {
+        email: true,
+        name: true,
+      },
+    })
+
+    // Send email notification if patient exists
+    if (patient?.email) {
+      try {
+        await sendResultUpdatedEmail(
+          patient.email,
+          patient.name || 'Patient',
+          testName,
+          testDate
+        )
+      } catch (error) {
+        console.error('Failed to send email notification:', error)
+        // Don't fail the request if email fails
+      }
+    }
 
     return NextResponse.json(result)
   } catch (error) {

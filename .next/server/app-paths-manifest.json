@@ -1,8 +1,8 @@
 {
+  "/api/assets/upload/route": "app/api/assets/upload/route.js",
   "/auth/signin/page": "app/auth/signin/page.js",
-  "/page": "app/page.js",
-  "/auth/register/page": "app/auth/register/page.js",
-  "/customer/page": "app/customer/page.js",
-  "/api/results/all/route": "app/api/results/all/route.js",
-  "/staff/dashboard/page": "app/staff/dashboard/page.js"
+  "/staff/dashboard/page": "app/staff/dashboard/page.js",
+  "/staff/patients/page": "app/staff/patients/page.js",
+  "/api/patients/route": "app/api/patients/route.js",
+  "/api/results/all/route": "app/api/results/all/route.js"
 }

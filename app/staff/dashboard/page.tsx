@@ -18,11 +18,15 @@ export default function StaffDashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [results, setResults] = useState<Result[]>([])
+  const [filteredResults, setFilteredResults] = useState<Result[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showUploadForm, setShowUploadForm] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [editingResult, setEditingResult] = useState<Result | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [dateFilter, setDateFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -39,6 +43,7 @@ export default function StaffDashboard() {
         if (!res.ok) throw new Error('Failed to fetch results')
         const data = await res.json()
         setResults(data)
+        setFilteredResults(data)
       } catch (error) {
         setError('Failed to load results')
       } finally {
@@ -50,6 +55,45 @@ export default function StaffDashboard() {
       fetchResults()
     }
   }, [status, session])
+
+  useEffect(() => {
+    let filtered = [...results]
+
+    // Apply search term filter
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      filtered = filtered.filter(result =>
+        result.patientId.toLowerCase().includes(term) ||
+        result.testName.toLowerCase().includes(term)
+      )
+    }
+
+    // Apply date filter
+    if (dateFilter) {
+      const filterDate = new Date(dateFilter)
+      filtered = filtered.filter(result => {
+        const resultDate = new Date(result.testDate)
+        return resultDate.toDateString() === filterDate.toDateString()
+      })
+    }
+
+    // Apply status filter
+    if (statusFilter) {
+      filtered = filtered.filter(result => {
+        const hasStatus = Object.entries(result.values).some(([key, value]) => {
+          const range = result.referenceRange[key]
+          if (!range) return false
+
+          const status = value < range.min ? 'Low' :
+                        value > range.max ? 'High' : 'Normal'
+          return status === statusFilter
+        })
+        return hasStatus
+      })
+    }
+
+    setFilteredResults(filtered)
+  }, [searchTerm, dateFilter, statusFilter, results])
 
   async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -224,6 +268,52 @@ export default function StaffDashboard() {
           </div>
         )}
 
+        {/* Search and Filter Controls */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '1rem',
+          marginBottom: '1.5rem'
+        }}>
+          <div>
+            <label htmlFor="search" className="form-label">Search</label>
+            <input
+              type="text"
+              id="search"
+              className="form-input"
+              placeholder="Search by patient ID or test name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="dateFilter" className="form-label">Filter by Date</label>
+            <input
+              type="date"
+              id="dateFilter"
+              className="form-input"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="statusFilter" className="form-label">Filter by Status</label>
+            <select
+              id="statusFilter"
+              className="form-input"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">All Statuses</option>
+              <option value="Normal">Normal</option>
+              <option value="High">High</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+        </div>
+
         {showUploadForm && (
           <div className="card" style={{ marginBottom: '1.5rem' }}>
             <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Upload New Result</h2>
@@ -386,7 +476,7 @@ export default function StaffDashboard() {
           </div>
         )}
 
-        {results.length === 0 ? (
+        {filteredResults.length === 0 ? (
           <p>No results found.</p>
         ) : (
           <div className="table-container" style={{ overflowX: 'auto' }}>
@@ -403,7 +493,7 @@ export default function StaffDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {results.map((result) => (
+                {filteredResults.map((result) => (
                   <tr key={result.id}>
                     <td>{result.patientId}</td>
                     <td>{result.testName}</td>

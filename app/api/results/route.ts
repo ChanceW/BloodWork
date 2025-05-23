@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '../auth/[...nextauth]/route'
+import { sendNewResultEmail } from '@/lib/email'
 
 export async function GET() {
   try {
@@ -47,6 +48,7 @@ export async function POST(req: Request) {
     const body = await req.json()
     const { patientId, testName, testDate, values, referenceRange, assetId } = body
 
+    // Create the result
     const result = await prisma.result.create({
       data: {
         patientId,
@@ -70,6 +72,30 @@ export async function POST(req: Request) {
         },
       },
     })
+
+    // Get patient information
+    const patient = await prisma.user.findUnique({
+      where: { patientId },
+      select: {
+        email: true,
+        name: true,
+      },
+    })
+
+    // Send email notification if patient exists
+    if (patient?.email) {
+      try {
+        await sendNewResultEmail(
+          patient.email,
+          patient.name || 'Patient',
+          testName,
+          testDate
+        )
+      } catch (error) {
+        console.error('Failed to send email notification:', error)
+        // Don't fail the request if email fails
+      }
+    }
 
     return NextResponse.json(result)
   } catch (error) {

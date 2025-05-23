@@ -15,10 +15,9 @@ export default function Navbar() {
 
   return (
     <nav style={{
-      backgroundColor: '#fff',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+      backgroundColor: '#1a1a1a',
       padding: '1rem',
-      marginBottom: '2rem'
+      color: 'white'
     }}>
       <div className="container" style={{
         display: 'flex',
@@ -26,10 +25,10 @@ export default function Navbar() {
         alignItems: 'center'
       }}>
         <Link href="/" style={{ 
-          fontSize: '1.25rem', 
-          fontWeight: 'bold',
-          color: '#2563eb',
-          textDecoration: 'none'
+          color: 'white', 
+          textDecoration: 'none',
+          fontSize: '1.25rem',
+          fontWeight: 'bold'
         }}>
           Blood Work Portal
         </Link>
@@ -37,19 +36,53 @@ export default function Navbar() {
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           {status === 'authenticated' ? (
             <>
-              <span style={{ color: '#4b5563' }}>
-                {session.user.email} ({session.user.role.toLowerCase()})
+              {session.user.role === 'STAFF' && (
+                <>
+                  <Link href="/staff/dashboard" style={{ 
+                    color: 'white', 
+                    textDecoration: 'none',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '0.375rem',
+                    backgroundColor: '#2563eb'
+                  }}>
+                    Dashboard
+                  </Link>
+                  <Link href="/staff/patients" style={{ 
+                    color: 'white', 
+                    textDecoration: 'none',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '0.375rem',
+                    backgroundColor: '#2563eb'
+                  }}>
+                    Patients
+                  </Link>
+                </>
+              )}
+              <span style={{ color: '#9ca3af' }}>
+                {session.user.email} ({session.user.role})
               </span>
               <button
                 onClick={handleSignOut}
-                className="btn btn-secondary"
-                style={{ fontSize: '0.875rem' }}
+                style={{
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.375rem',
+                  backgroundColor: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
               >
                 Sign Out
               </button>
             </>
           ) : (
-            <Link href="/auth/signin" className="btn btn-primary">
+            <Link href="/auth/signin" style={{ 
+              color: 'white', 
+              textDecoration: 'none',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.375rem',
+              backgroundColor: '#2563eb'
+            }}>
               Sign In
             </Link>
           )}

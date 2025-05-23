@@ -1,0 +1,63 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  role          Role      @default(CUSTOMER)
+  patientId     String?   @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  results       Result[]
+  uploadedAssets Asset[]  @relation("UploadedBy")
+  auditLogs     AuditLog[]
+}
+
+model Result {
+  id            String    @id @default(cuid())
+  patientId     String
+  testName      String
+  testDate      DateTime
+  values        Json
+  referenceRange Json
+  assetId       String?
+  asset         Asset?    @relation(fields: [assetId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [patientId], references: [patientId])
+  auditLogs     AuditLog[]
+}
+
+model Asset {
+  id            String    @id @default(cuid())
+  data          Bytes
+  contentType   String
+  uploadedBy    User      @relation("UploadedBy", fields: [uploadedById], references: [id])
+  uploadedById  String
+  uploadedAt    DateTime  @default(now())
+  results       Result[]
+}
+
+model AuditLog {
+  id            String    @id @default(cuid())
+  action        String
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  resultId      String?
+  result        Result?   @relation(fields: [resultId], references: [id])
+  timestamp     DateTime  @default(now())
+  details       Json?
+}
+
+enum Role {
+  CUSTOMER
+  STAFF
+  ADMIN
+} 
